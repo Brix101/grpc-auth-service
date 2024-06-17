@@ -53,6 +53,13 @@ const authProto = protoDescriptor.auth as any;
 const server = new Server();
 server.addService(authProto.AuthService.service, {
   Login: (call, callback) => {
+    const apiKey = call.metadata.get("x-api-key")[0];
+    // Validate the API key
+    if (apiKey !== "your-api-key") {
+      callback({ code: status.UNAUTHENTICATED, details: "Invalid API key" });
+      return;
+    }
+
     const { username, password } = call.request;
     const user = validateUser(username, password);
     if (user) {
@@ -65,6 +72,13 @@ server.addService(authProto.AuthService.service, {
     }
   },
   ValidateToken: (call, callback) => {
+    const apiKey = call.metadata.get("x-api-key")[0];
+    // Validate the API key
+    if (apiKey !== "your-api-key") {
+      callback({ code: status.UNAUTHENTICATED, details: "Invalid API key" });
+      return;
+    }
+
     const { token } = call.request;
     // Validate the token and return the result
     // This is a dummy implementation, replace with actual token validation
@@ -75,6 +89,13 @@ server.addService(authProto.AuthService.service, {
     }
   },
   GetUser: (call, callback) => {
+    const apiKey = call.metadata.get("x-api-key")[0];
+    // Validate the API key
+    if (apiKey !== "your-api-key") {
+      callback({ code: status.UNAUTHENTICATED, details: "Invalid API key" });
+      return;
+    }
+
     const { token } = call.request;
     // Validate the token and return the user's information
     // This is a dummy implementation, replace with actual token validation and user fetching
