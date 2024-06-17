@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "generate": "proto-loader-gen-types  --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=src/types/ protos/*.proto",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

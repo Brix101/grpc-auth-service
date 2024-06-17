@@ -1,10 +1,20 @@
 import {
   Server,
   ServerCredentials,
+  ServerUnaryCall,
   loadPackageDefinition,
+  sendUnaryData,
   status,
 } from "@grpc/grpc-js";
 import { loadSync } from "@grpc/proto-loader";
+import { ProtoGrpcType } from "./types/auth";
+import { AuthServiceHandlers } from "./types/auth/AuthService";
+import { GetUserRequest } from "./types/auth/GetUserRequest";
+import { GetUserResponse } from "./types/auth/GetUserResponse";
+import { LoginRequest } from "./types/auth/LoginRequest";
+import { LoginResponse } from "./types/auth/LoginResponse";
+import { ValidateTokenRequest } from "./types/auth/ValidateTokenRequest";
+import { ValidateTokenResponse } from "./types/auth/ValidateTokenResponse";
 
 const PROTO_PATH = process.cwd() + "/protos/auth.proto";
 
@@ -29,8 +39,8 @@ function addUser(user: User) {
   users.push(user);
 }
 
-function validateUser(username: string, password: string) {
-  const user = getUser(username);
+function validateUser(username?: string, password?: string) {
+  const user = getUser(username ?? "");
   if (user && user.password !== password) {
     return null;
   }
@@ -46,13 +56,17 @@ const packageDefination = loadSync(PROTO_PATH, {
   oneofs: true,
 });
 
-const protoDescriptor = loadPackageDefinition(packageDefination);
+const protoDescriptor = loadPackageDefinition(
+  packageDefination
+) as unknown as ProtoGrpcType;
 
-const authProto = protoDescriptor.auth as any;
+const authProto = protoDescriptor.auth;
 
-const server = new Server();
-server.addService(authProto.AuthService.service, {
-  Login: (call, callback) => {
+const authServiceHandler: AuthServiceHandlers = {
+  Login: (
+    call: ServerUnaryCall<LoginRequest, LoginResponse>,
+    callback: sendUnaryData<LoginResponse>
+  ) => {
     const apiKey = call.metadata.get("x-api-key")[0];
     // Validate the API key
     if (apiKey !== "your-api-key") {
@@ -63,7 +77,7 @@ server.addService(authProto.AuthService.service, {
     const { username, password } = call.request;
     const user = validateUser(username, password);
     if (user) {
-      callback(null, { token: "dummy_token", user }); // Replace with actual token generation
+      callback(null, { token: "dummy_token" }); // Replace with actual token generation
     } else {
       callback({
         code: status.UNAUTHENTICATED,
@@ -71,7 +85,10 @@ server.addService(authProto.AuthService.service, {
       });
     }
   },
-  ValidateToken: (call, callback) => {
+  ValidateToken: (
+    call: ServerUnaryCall<ValidateTokenRequest, ValidateTokenResponse>,
+    callback: sendUnaryData<ValidateTokenResponse>
+  ) => {
     const apiKey = call.metadata.get("x-api-key")[0];
     // Validate the API key
     if (apiKey !== "your-api-key") {
@@ -88,7 +105,10 @@ server.addService(authProto.AuthService.service, {
       callback(null, { valid: false });
     }
   },
-  GetUser: (call, callback) => {
+  GetUser: (
+    call: ServerUnaryCall<GetUserRequest, GetUserResponse>,
+    callback: sendUnaryData<GetUserResponse>
+  ) => {
     const apiKey = call.metadata.get("x-api-key")[0];
     // Validate the API key
     if (apiKey !== "your-api-key") {
@@ -109,7 +129,11 @@ server.addService(authProto.AuthService.service, {
       callback({ code: status.UNAUTHENTICATED, details: "Invalid token" });
     }
   },
-});
+};
+
+const server = new Server();
+
+server.addService(authProto.AuthService.service, authServiceHandler);
 
 const port = process.env.PORT || 50051;
 server.bindAsync("0.0.0.0:" + port, ServerCredentials.createInsecure(), () => {
