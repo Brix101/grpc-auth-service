@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package auth;
+
+// The authentication service definition.
+service AuthService {
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse) {}
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {}
+}
+
+// The request message containing the user's name and password.
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+// The response message containing the user's token.
+message LoginResponse {
+  string token = 1;
+}
+
+// The request message containing the token.
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+// The response message containing the token's validity.
+message ValidateTokenResponse {
+  bool valid = 1;
+}
+
+// The request message containing the token.
+message GetUserRequest {
+  string token = 1;
+}
+
+// The response message containing the user's information.
+message GetUserResponse {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  // Add more fields as needed
+}
